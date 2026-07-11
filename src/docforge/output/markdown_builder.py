@@ -31,5 +31,5 @@ class MarkdownBuilder:
             elif b.type == ContentType.TABLE:
                 parts.append(f"\n{b.content}\n")
             elif b.type == ContentType.IMAGE:
-                parts.append(f"![]({b.content})")
+                parts.append(f"\n![]({b.content})\n")
         return "\n".join(parts)

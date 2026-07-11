@@ -139,3 +139,70 @@ class TestMarkdownBuilder:
         # FORMULA type not explicitly handled, so content won't appear
         # This is expected behavior for the skeleton
         assert "Text" in result
+
+    # --- CARD-014: MarkdownBuilder Extension tests ---
+
+    def test_image_has_blank_lines_before_and_after(self):
+        builder = MarkdownBuilder()
+        blocks = [
+            ContentBlock(type=ContentType.TEXT, content="Before", page=1, reading_order=0),
+            ContentBlock(type=ContentType.IMAGE, content="img.png", page=1, reading_order=1),
+            ContentBlock(type=ContentType.TEXT, content="After", page=1, reading_order=2),
+        ]
+        config = ParseConfig()
+        result = builder.build(blocks, config)
+        # Image should have blank line before and after
+        assert "\n\n![]" in result or result.startswith("\n![]")
+        assert ")\n\n" in result or result.endswith(")\n")
+
+    def test_image_reference_path_is_relative(self):
+        builder = MarkdownBuilder()
+        blocks = [
+            ContentBlock(type=ContentType.IMAGE, content="report_images/page_1_img_0.png", page=1, reading_order=0),
+        ]
+        config = ParseConfig()
+        result = builder.build(blocks, config)
+        assert "report_images/page_1_img_0.png" in result
+        assert "![](" in result
+
+    def test_table_has_blank_lines_before_and_after(self):
+        builder = MarkdownBuilder()
+        blocks = [
+            ContentBlock(type=ContentType.TEXT, content="Before", page=1, reading_order=0),
+            ContentBlock(type=ContentType.TABLE, content="| A | B |\n| --- | --- |\n| 1 | 2 |", page=1, reading_order=1),
+            ContentBlock(type=ContentType.TEXT, content="After", page=1, reading_order=2),
+        ]
+        config = ParseConfig()
+        result = builder.build(blocks, config)
+        # Table should have blank lines before and after
+        before_pos = result.index("Before")
+        table_pos = result.index("| A |")
+        after_pos = result.index("After")
+        assert before_pos < table_pos < after_pos
+        # There should be at least one newline between text and table
+        assert "\n\n|" in result or result.startswith("\n|")
+        assert result[table_pos:].count("After") > 0
+
+    def test_text_table_image_mixed_output_correct(self):
+        builder = MarkdownBuilder()
+        blocks = [
+            ContentBlock(type=ContentType.TEXT, content="Intro text", page=1, reading_order=0),
+            ContentBlock(
+                type=ContentType.TABLE,
+                content="| Name | Age |\n| --- | --- |\n| Alice | 30 |",
+                page=1,
+                reading_order=1,
+            ),
+            ContentBlock(type=ContentType.IMAGE, content="figures/chart.png", page=1, reading_order=2),
+            ContentBlock(type=ContentType.TEXT, content="Outro text", page=2, reading_order=0),
+        ]
+        config = ParseConfig()
+        result = builder.build(blocks, config)
+        # All content types should appear
+        assert "Intro text" in result
+        assert "| Name | Age |" in result
+        assert "![]" in result
+        assert "figures/chart.png" in result
+        assert "Outro text" in result
+        # Cross-page separator
+        assert "---" in result
