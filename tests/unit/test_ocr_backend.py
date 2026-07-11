@@ -45,30 +45,40 @@ class TestOCRBackend:
         assert isinstance(backend, DummyAvailableBackend)
 
     def test_get_backend_auto_picks_first_available(self):
-        register_backend("dummy_auto_a", DummyAvailableBackend)
-        register_backend("dummy_auto_b", DummyAvailableBackend)
-        backend = get_backend("auto")
-        # Should be the first registered available backend
-        assert isinstance(backend, DummyAvailableBackend)
-        # Cleanup
-        _BACKEND_REGISTRY.pop("dummy_auto_a", None)
-        _BACKEND_REGISTRY.pop("dummy_auto_b", None)
-        _BACKEND_REGISTRY.pop("dummy_test", None)
+        # Save and clear registry so real backends don't interfere
+        saved = dict(_BACKEND_REGISTRY)
+        _BACKEND_REGISTRY.clear()
+        try:
+            register_backend("dummy_auto_a", DummyAvailableBackend)
+            register_backend("dummy_auto_b", DummyAvailableBackend)
+            backend = get_backend("auto")
+            assert isinstance(backend, DummyAvailableBackend)
+        finally:
+            _BACKEND_REGISTRY.clear()
+            _BACKEND_REGISTRY.update(saved)
 
     def test_get_backend_auto_skips_unavailable(self):
-        register_backend("dummy_unavail", DummyUnavailableBackend)
-        register_backend("dummy_avail", DummyAvailableBackend)
-        backend = get_backend("auto")
-        # Should skip the unavailable one and return the available one
-        assert isinstance(backend, DummyAvailableBackend)
-        _BACKEND_REGISTRY.pop("dummy_unavail", None)
-        _BACKEND_REGISTRY.pop("dummy_avail", None)
+        saved = dict(_BACKEND_REGISTRY)
+        _BACKEND_REGISTRY.clear()
+        try:
+            register_backend("dummy_unavail", DummyUnavailableBackend)
+            register_backend("dummy_avail", DummyAvailableBackend)
+            backend = get_backend("auto")
+            assert isinstance(backend, DummyAvailableBackend)
+        finally:
+            _BACKEND_REGISTRY.clear()
+            _BACKEND_REGISTRY.update(saved)
 
     def test_get_backend_no_available_raises_ocerror(self):
-        register_backend("dummy_unavail_only", DummyUnavailableBackend)
-        with pytest.raises(OCRError, match="No OCR backend available"):
-            get_backend("auto")
-        _BACKEND_REGISTRY.pop("dummy_unavail_only", None)
+        saved = dict(_BACKEND_REGISTRY)
+        _BACKEND_REGISTRY.clear()
+        try:
+            register_backend("dummy_unavail_only", DummyUnavailableBackend)
+            with pytest.raises(OCRError, match="No OCR backend available"):
+                get_backend("auto")
+        finally:
+            _BACKEND_REGISTRY.clear()
+            _BACKEND_REGISTRY.update(saved)
 
     def test_get_backend_unknown_name_raises_ocerror(self):
         with pytest.raises(OCRError, match="Unknown OCR backend"):
