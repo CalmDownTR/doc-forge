@@ -51,17 +51,39 @@ def edit_distance(s1: str, s2: str) -> float:
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "pdf"
 
 
-def _load_golden(filename: str) -> str:
-    """Load a golden file from the PDF fixtures directory."""
+def _load_golden(filename: str) -> Optional[str]:
+    """Load a golden file from the PDF fixtures directory.
+
+    Returns None if the golden file does not exist (fixtures not generated).
+    """
     golden_path = FIXTURES_DIR / filename
     if golden_path.exists():
         return golden_path.read_text(encoding="utf-8").strip()
-    return ""
+    return None
+
+
+def _require_golden(filename: str) -> str:
+    """Load a golden file, skipping the test if it does not exist."""
+    golden = _load_golden(filename)
+    if golden is None:
+        pytest.skip(
+            f"Golden file '{filename}' not found. "
+            f"Run 'python tests/fixtures/pdf/generate_fixtures.py' to generate fixtures."
+        )
+    return golden
 
 
 def _parse_fixture(filename: str, **kwargs: object) -> str:
-    """Parse a PDF fixture and return the markdown output."""
+    """Parse a PDF fixture and return the markdown output.
+
+    Skips the test if the fixture file does not exist (fixtures not generated).
+    """
     filepath = FIXTURES_DIR / filename
+    if not filepath.exists():
+        pytest.skip(
+            f"Fixture file '{filename}' not found. "
+            f"Run 'python tests/fixtures/pdf/generate_fixtures.py' to generate fixtures."
+        )
     result = parse(str(filepath), extract_images=False, **kwargs)
     return result.markdown.strip()
 
@@ -115,7 +137,7 @@ class TestQualityRegression:
 
     def test_native_chinese_edit_distance(self):
         """native_chinese.pdf output should closely match golden."""
-        golden = _load_golden("native_chinese.golden.md")
+        golden = _require_golden("native_chinese.golden.md")
         parsed = _parse_fixture("native_chinese.pdf")
 
         distance = edit_distance(parsed, golden)
@@ -125,7 +147,7 @@ class TestQualityRegression:
 
     def test_native_english_edit_distance(self):
         """native_english.pdf output should closely match golden."""
-        golden = _load_golden("native_english.golden.md")
+        golden = _require_golden("native_english.golden.md")
         parsed = _parse_fixture("native_english.pdf")
 
         distance = edit_distance(parsed, golden)
@@ -154,7 +176,7 @@ class TestQualityRegression:
 
     def test_font_subset_chinese_regression(self):
         """font_subset_chinese.pdf output should not regress."""
-        golden = _load_golden("font_subset_chinese.golden.md")
+        golden = _require_golden("font_subset_chinese.golden.md")
         parsed = _parse_fixture("font_subset_chinese.pdf", ocr_backend="none")
 
         distance = edit_distance(parsed, golden)
@@ -166,7 +188,7 @@ class TestQualityRegression:
 
     def test_with_images_regression(self):
         """with_images.pdf output should not regress."""
-        golden = _load_golden("with_images.golden.md")
+        golden = _require_golden("with_images.golden.md")
         parsed = _parse_fixture("with_images.pdf")
 
         distance = edit_distance(parsed, golden)

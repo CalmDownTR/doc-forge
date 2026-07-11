@@ -12,6 +12,21 @@ wheels/
 # macOS
 .DS_Store
 
+# Testing & coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Generated test fixtures
+tests/fixtures/pdf/*.pdf
+tests/fixtures/pdf/*.golden.md
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
 # Project-specific
 .workbuddy/
 product/
