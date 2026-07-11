@@ -126,3 +126,52 @@ class TestImageParserParse:
         finally:
             _BACKEND_REGISTRY.clear()
             _BACKEND_REGISTRY.update(saved)
+
+    def test_parse_rgba_image_mode_conversion(self, tmp_path: Path):
+        """Test parsing an RGBA image triggers mode conversion to RGB."""
+        filepath = tmp_path / "rgba_test.png"
+        img = Image.new("RGBA", (50, 50), color=(255, 0, 0, 128))
+        img.save(str(filepath), format="PNG")
+
+        saved = dict(_BACKEND_REGISTRY)
+        _BACKEND_REGISTRY.clear()
+        try:
+            register_backend("dummy_image_test", _DummyAvailableBackend)
+            config = ParseConfig(ocr_backend="dummy_image_test")
+            blocks = ImageParser().parse(filepath, config)
+            assert len(blocks) >= 1
+        finally:
+            _BACKEND_REGISTRY.clear()
+            _BACKEND_REGISTRY.update(saved)
+
+    def test_parse_grayscale_image_no_conversion_needed(self, tmp_path: Path):
+        """Test parsing a grayscale image (L mode) works without conversion."""
+        filepath = tmp_path / "gray_test.png"
+        img = Image.new("L", (50, 50), color=128)
+        img.save(str(filepath), format="PNG")
+
+        saved = dict(_BACKEND_REGISTRY)
+        _BACKEND_REGISTRY.clear()
+        try:
+            register_backend("dummy_image_test", _DummyAvailableBackend)
+            config = ParseConfig(ocr_backend="dummy_image_test")
+            blocks = ImageParser().parse(filepath, config)
+            assert len(blocks) >= 1
+        finally:
+            _BACKEND_REGISTRY.clear()
+            _BACKEND_REGISTRY.update(saved)
+
+    def test_sort_by_reading_order_fallback(self):
+        """Test _sort_by_reading_order with results that have no bbox."""
+        from docforge.parsers.image_parser import ImageParser
+
+        # Create a mock result-like object without a valid bbox
+        class NoBBoxResult:
+            pass
+
+        r1 = OCRTextResult(text="A", bbox=None, confidence=0.9)
+        r2 = OCRTextResult(text="B", bbox=[], confidence=0.8)
+
+        parser = ImageParser()
+        sorted_results = parser._sort_by_reading_order([r1, r2])
+        assert len(sorted_results) == 2

@@ -67,3 +67,22 @@ class TestPaddleOCRBackend:
         assert result[0].confidence == 0.95
         assert result[1].text == "World"
         assert result[1].confidence == 0.88
+
+    def test_recognize_pil_image_input(self):
+        """Test recognize() with a PIL Image (non-numpy) input."""
+        from PIL import Image
+
+        backend = PaddleOCRBackend()
+        mock_reader = MagicMock()
+        mock_reader.ocr.return_value = [
+            [
+                [[[0, 0], [10, 0], [10, 10], [0, 10]], ("PILTest", 0.99)]
+            ]
+        ]
+        backend._reader = mock_reader
+
+        pil_img = Image.new("RGB", (10, 10), color="white")
+        result = backend.recognize(pil_img)
+        assert len(result) == 1
+        assert result[0].text == "PILTest"
+        assert result[0].confidence == 0.99

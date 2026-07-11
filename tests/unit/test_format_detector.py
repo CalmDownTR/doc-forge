@@ -77,6 +77,54 @@ class TestDetectFileType:
         f.write_bytes(b"\xff\xd8\xff fake jpeg content")
         assert detect_file_type(f) == "image"
 
+    def test_detect_bmp_by_extension(self, tmp_path: Path):
+        f = tmp_path / "test.bmp"
+        f.write_bytes(b"BM\x00\x00\x00fake bmp")
+        assert detect_file_type(f) == "image"
+
+    def test_detect_tiff_by_extension(self, tmp_path: Path):
+        f = tmp_path / "test.tiff"
+        f.write_bytes(b"II*\x00fake tiff")
+        assert detect_file_type(f) == "image"
+
+    def test_detect_webp_by_extension(self, tmp_path: Path):
+        f = tmp_path / "test.webp"
+        f.write_bytes(b"RIFF....WEBPfake")
+        assert detect_file_type(f) == "image"
+
+    def test_detect_markdown_extension(self, tmp_path: Path):
+        f = tmp_path / "README.markdown"
+        f.write_text("# Hello")
+        assert detect_file_type(f) == "md"
+
+    def test_nonexistent_file_extension_fallback(self, tmp_path: Path):
+        """Non-existent file with known extension should fall back to extension."""
+        f = tmp_path / "missing.pdf"
+        assert detect_file_type(f) == "pdf"
+
+    def test_nonexistent_file_unknown_extension_raises(self, tmp_path: Path):
+        """Non-existent file with unknown extension raises ValueError."""
+        f = tmp_path / "missing.xyz"
+        with pytest.raises(ValueError, match="Cannot detect file type"):
+            detect_file_type(f)
+
+    def test_bad_zip_file_returns_false(self, tmp_path: Path):
+        """A file starting with PK but being a bad ZIP should fall back to extension."""
+        f = tmp_path / "corrupt.docx"
+        f.write_bytes(b"PK\x03\x04corrupted zip data")
+        assert detect_file_type(f) == "docx"
+
+    def test_generic_zip_extension_fallback(self, tmp_path: Path):
+        """A ZIP file without word/, xl/, ppt/ members falls back to extension."""
+        import zipfile
+
+        f = tmp_path / "archive.zip"
+        with zipfile.ZipFile(f, "w") as zf:
+            zf.writestr("data/info.txt", "hello")
+        # .zip is not in extension map -> ValueError
+        with pytest.raises(ValueError, match="Cannot detect file type from ZIP"):
+            detect_file_type(f)
+
 
 class TestParse:
     def test_parse_nonexistent_file_raises(self):

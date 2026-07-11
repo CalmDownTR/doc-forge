@@ -185,3 +185,90 @@ class TestDOCXParserEmptyTable:
 
         table_blocks = [b for b in blocks if b.type == ContentType.TABLE]
         assert len(table_blocks) == 0
+
+
+class TestDOCXParserEdgeCases:
+    def test_custom_image_output_dir(self, tmp_path: Path):
+        """Test that custom image_output_dir is used."""
+        import io
+
+        doc = DocxDocument()
+        doc.add_heading("Title", level=1)
+        doc.add_paragraph("Text.")
+        img_bytes_io = io.BytesIO()
+        from PIL import Image
+        img = Image.new("RGB", (10, 10), color="red")
+        img.save(img_bytes_io, format="PNG")
+        img_bytes_io.seek(0)
+        doc.add_picture(img_bytes_io)
+        doc.add_paragraph("After image.")
+
+        filepath = tmp_path / "custom_dir.docx"
+        doc.save(str(filepath))
+
+        custom_dir = tmp_path / "my_images"
+        config = ParseConfig(extract_images=True, image_output_dir=custom_dir)
+        blocks = DOCXParser().parse(filepath, config)
+
+        assert custom_dir.exists()
+        image_blocks = [b for b in blocks if b.type == ContentType.IMAGE]
+        assert len(image_blocks) >= 1
+
+    def test_document_with_only_empty_paragraphs(self, tmp_path: Path):
+        """Test that empty paragraphs are filtered out."""
+        doc = DocxDocument()
+        p = doc.add_paragraph("")
+        # Force truly empty paragraph
+        p.clear()
+        filepath = tmp_path / "empty_paras.docx"
+        doc.save(str(filepath))
+        config = ParseConfig(extract_images=False)
+        blocks = DOCXParser().parse(filepath, config)
+        # All blocks returned should have non-empty content
+        text_blocks = [b for b in blocks if b.type == ContentType.TEXT]
+        for b in text_blocks:
+            assert b.content.strip() != ""
+
+    def test_escape_cell_pipe_characters(self):
+        """Test that pipe characters in table cells are escaped."""
+        parser = DOCXParser()
+        result = parser._escape_cell("a|b")
+        assert result == "a\\|b"
+
+    def test_build_cell_grid_with_merged_cells(self, tmp_path: Path):
+        """Test building cell grid handles merged cells."""
+        doc = DocxDocument()
+        table = doc.add_table(rows=2, cols=2)
+        table.style = "Table Grid"
+        # Normal cells
+        table.rows[0].cells[0].text = "A"
+        table.rows[0].cells[1].text = "B"
+        table.rows[1].cells[0].text = "C"
+        table.rows[1].cells[1].text = "D"
+
+        filepath = tmp_path / "merged.docx"
+        doc.save(str(filepath))
+        config = ParseConfig(extract_images=False)
+        blocks = DOCXParser().parse(filepath, config)
+
+        table_blocks = [b for b in blocks if b.type == ContentType.TABLE]
+        assert len(table_blocks) >= 1
+        content = table_blocks[0].content
+        assert "A" in content
+        assert "B" in content
+        assert "C" in content
+        assert "D" in content
+
+    def test_heading_style_none_returns_zero(self, tmp_path: Path):
+        """Test heading level returns 0 when heading style has no useful name."""
+        doc = DocxDocument()
+        doc.add_paragraph("No heading style paragraph.")
+        filepath = tmp_path / "no_heading_style.docx"
+        doc.save(str(filepath))
+        config = ParseConfig(extract_images=False)
+        blocks = DOCXParser().parse(filepath, config)
+
+        text_blocks = [b for b in blocks if b.type == ContentType.TEXT]
+        # The paragraph should NOT be detected as a heading
+        headings = [b for b in text_blocks if b.metadata.get("is_heading")]
+        assert len(headings) == 0
