@@ -238,3 +238,126 @@ class TestCLIOCRFlag:
         input_file.write_text("OCR auto test", encoding="utf-8")
         result = run_cli("parse", str(input_file), "--ocr", "auto")
         assert result.returncode == 0
+
+
+class TestCLIHelpers:
+    """Direct unit tests for CLI helper functions (for coverage)."""
+
+    def test_parse_markdown_table_simple(self):
+        """Parse a simple markdown table string."""
+        from docforge.cli import _parse_markdown_table
+
+        markdown = "| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |"
+        rows = _parse_markdown_table(markdown)
+        # Header + 2 data rows, separator is filtered
+        assert len(rows) == 3
+        assert rows[0] == ["A", "B"]
+        assert rows[1] == ["1", "2"]
+        assert rows[2] == ["3", "4"]
+
+    def test_parse_markdown_table_empty(self):
+        """Parse empty markdown table."""
+        from docforge.cli import _parse_markdown_table
+
+        rows = _parse_markdown_table("")
+        assert rows == []
+
+    def test_parse_markdown_table_with_leading_trailing_pipes(self):
+        """Parse table with properly formatted pipes."""
+        from docforge.cli import _parse_markdown_table
+
+        markdown = "| Name | Age |\n| --- | --- |\n| Alice | 30 |"
+        rows = _parse_markdown_table(markdown)
+        # Header + 1 data row, separator filtered
+        assert len(rows) == 2
+        assert rows[0] == ["Name", "Age"]
+        assert rows[1] == ["Alice", "30"]
+
+    def test_parse_single_direct(self, tmp_path: Path):
+        """Direct call to _parse_single for coverage."""
+        import argparse
+
+        from docforge.cli import _parse_single
+
+        input_file = tmp_path / "test.txt"
+        input_file.write_text("Direct test content", encoding="utf-8")
+        output_file = tmp_path / "out.md"
+
+        args = argparse.Namespace(
+            ocr="auto",
+            output=str(output_file),
+            export_tables=False,
+            file=str(input_file),
+        )
+        _parse_single(input_file, args)
+        assert output_file.exists()
+        assert "Direct test content" in output_file.read_text()
+
+    def test_parse_directory_direct(self, tmp_path: Path):
+        """Direct call to _parse_directory for coverage."""
+        import argparse
+
+        from docforge.cli import _parse_directory
+
+        input_dir = tmp_path / "docs"
+        input_dir.mkdir()
+        (input_dir / "one.txt").write_text("One", encoding="utf-8")
+        (input_dir / "two.txt").write_text("Two", encoding="utf-8")
+        output_dir = tmp_path / "out"
+
+        args = argparse.Namespace(
+            ocr="auto",
+            output=str(output_dir),
+            recursive=False,
+            export_tables=False,
+            file=str(input_dir),
+        )
+        _parse_directory(input_dir, args)
+        assert (output_dir / "one.md").exists()
+        assert (output_dir / "two.md").exists()
+
+    def test_write_output_with_output_flag(self, tmp_path: Path):
+        """Test _write_output with --output flag."""
+        import argparse
+
+        from docforge.cli import _write_output
+
+        source = tmp_path / "src.txt"
+        out = tmp_path / "dest.md"
+        args = argparse.Namespace(
+            output=str(out),
+            file=str(source),
+        )
+        _write_output("# Test", source, args)
+        assert out.exists()
+        assert "# Test" in out.read_text()
+
+    def test_export_tables_csv_direct(self, tmp_path: Path):
+        """Direct call to _export_tables_csv."""
+        import argparse
+        from unittest.mock import MagicMock
+
+        from docforge.cli import _export_tables_csv
+        from docforge.models import TableResult
+
+        # Use XLSX to get actual tables
+        import openpyxl
+        xlsx_file = tmp_path / "data.xlsx"
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sheet1"
+        ws.append(["Name", "Age"])
+        ws.append(["Alice", 30])
+        wb.save(str(xlsx_file))
+
+        from docforge.api import parse
+        result = parse(str(xlsx_file))
+
+        output_dir = tmp_path / "csv_out"
+        args = argparse.Namespace(
+            output=str(output_dir),
+            file=str(xlsx_file),
+        )
+        _export_tables_csv(result, args)
+        csv_files = list(output_dir.glob("*.csv"))
+        assert len(csv_files) >= 1

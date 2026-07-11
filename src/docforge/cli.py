@@ -185,8 +185,6 @@ def _parse_markdown_table(markdown: str) -> list[list[str]]:
         line = line.strip()
         if not line.startswith("|"):
             continue
-        if line.startswith("|---") or ":---" in line:
-            continue
         # Split by | and strip each cell
         cells = [c.strip() for c in line.split("|")]
         # Remove empty first/last from leading/trailing pipe
@@ -194,6 +192,9 @@ def _parse_markdown_table(markdown: str) -> list[list[str]]:
             cells = cells[1:]
         if cells and cells[-1] == "":
             cells = cells[:-1]
+        # Detect separator rows: all cells contain only -, :, and spaces
+        if cells and all(c and all(ch in "-: " for ch in c) for c in cells):
+            continue
         if any(cells):  # Skip completely empty rows
             rows.append(cells)
     return rows

@@ -4,11 +4,26 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docforge"
-version = "0.1.0"
-description = "Universal document parser for RAG. Chinese-first."
-license = "MIT"
+version = "1.0.0"
+description = "Universal document parser for RAG applications. Chinese-first."
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+    { name = "CalmDownTR" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
 dependencies = [
     "PyMuPDF>=1.24.0",
     "pdfplumber>=0.11.0",
@@ -19,13 +34,20 @@ dependencies = [
     "requests>=2.34.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/CalmDownTR/docforge"
+Repository = "https://github.com/CalmDownTR/docforge"
+"Issue Tracker" = "https://github.com/CalmDownTR/docforge/issues"
+
 [project.optional-dependencies]
 ocr-paddle = ["paddleocr>=2.7.0", "paddlepaddle>=2.6.0"]
 ocr-surya = [
     "surya-ocr>=0.5.0",
 ]
 image-preprocess = ["opencv-python>=4.8.0"]
-pptx = ["python-pptx>=0.6.23"]
+pptx = [
+    "python-pptx>=0.6.23",
+]
 all = ["docforge[ocr-paddle,ocr-surya,image-preprocess,pptx]"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff", "mypy"]
 
@@ -34,3 +56,8 @@ docforge = "docforge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docforge"]
+
+[dependency-groups]
+dev = [
+    "build>=1.5.1",
+]
