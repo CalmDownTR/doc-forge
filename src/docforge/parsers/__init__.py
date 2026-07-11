@@ -44,3 +44,7 @@ def get_parser(file_type: str) -> BaseParser:
 def list_supported_types() -> list[str]:
     """Return a list of all registered file types."""
     return list(_PARSER_REGISTRY.keys())
+
+
+# Import parser implementations to trigger registration
+import docforge.parsers.pdf  # noqa: E402, F401
