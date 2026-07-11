@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 
+from docforge.config import ParseConfig
+from docforge.engine.image_placement import ImagePlacement
+from docforge.engine.table_engine import TableEngine
 from docforge.models import ContentBlock, ContentType
 
 
@@ -90,3 +93,24 @@ class TextCleaner:
             lines.pop(0)
 
         return "\n".join(lines)
+
+
+class ContentEngine:
+    """Content orchestration engine. Responsibility chain."""
+
+    def __init__(self) -> None:
+        self._table_engine = TableEngine()
+        self._image_placement = ImagePlacement()
+        self._text_cleaner = TextCleaner()
+
+    def process(self, blocks: list[ContentBlock], config: ParseConfig) -> list[ContentBlock]:
+        """
+        Post-processing pipeline:
+        1. TableEngine.repair() -> table repair
+        2. ImagePlacement.arrange() -> image sorting
+        3. TextCleaner.clean() -> text cleaning
+        """
+        blocks = self._table_engine.repair(blocks, config)
+        blocks = self._image_placement.arrange(blocks, config)
+        blocks = self._text_cleaner.clean(blocks)
+        return blocks

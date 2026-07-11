@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from docforge.config import ParseConfig
+from docforge.engine import ContentEngine
 from docforge.exceptions import FileNotSupportedError
 from docforge.models import (
     ContentBlock,
@@ -38,6 +39,10 @@ def parse(file_path: str | Path, **kwargs: object) -> ParseResult:
     config = ParseConfig(**config_kwargs) if config_kwargs else ParseConfig()
     parser = get_parser(file_type)
     blocks: list[ContentBlock] = parser.parse(path, config)
+
+    # ContentEngine: post-processing pipeline
+    engine = ContentEngine()
+    blocks = engine.process(blocks, config)
 
     markdown = MarkdownBuilder().build(blocks, config)
 
