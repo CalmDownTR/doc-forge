@@ -170,6 +170,102 @@ def generate_with_images():
     print(f"  Created: {golden_path.name}")
 
 
+def generate_scanned_chinese():
+    """Generate scanned_chinese.pdf — Chinese scanned doc (no text layer).
+
+    Creates a page with an embedded image of Chinese text, so page.get_text()
+    returns empty (simulating a scanned document).
+    """
+    from PIL import Image as PILImage, ImageDraw, ImageFont
+
+    doc = fitz.open()
+    page = doc.new_page()
+
+    # Create an image with Chinese text rendered on it
+    img = PILImage.new("RGB", (400, 100), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    # Use default font since Chinese font path varies
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", 20)
+    except (OSError, IOError):
+        font = ImageFont.load_default()
+    draw.text((10, 10), "这是一段扫描文档的中文测试文本", fill=(0, 0, 0), font=font)
+    draw.text((10, 40), "用于验证OCR解析功能", fill=(0, 0, 0), font=font)
+    draw.text((10, 70), "DocForge项目里程碑三测试", fill=(0, 0, 0), font=font)
+
+    img_path = FIXTURES_DIR / "_temp_scan_chinese.png"
+    img.save(str(img_path))
+
+    rect = fitz.Rect(0, 0, 400, 100)
+    page.insert_image(rect, filename=str(img_path))  # type: ignore[no-untyped-call]
+
+    path = FIXTURES_DIR / "scanned_chinese.pdf"
+    doc.save(str(path))
+    doc.close()
+    img_path.unlink()
+    print(f"  Created: {path.name}")
+
+
+def generate_scanned_english():
+    """Generate scanned_english.pdf — English scanned doc (no text layer).
+
+    Creates a page with an embedded image of English text.
+    """
+    from PIL import Image as PILImage, ImageDraw
+
+    doc = fitz.open()
+    page = doc.new_page()
+
+    img = PILImage.new("RGB", (400, 100), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.text((10, 10), "This is a scanned document", fill=(0, 0, 0))
+    draw.text((10, 40), "For testing OCR parsing", fill=(0, 0, 0))
+    draw.text((10, 70), "DocForge Milestone 3", fill=(0, 0, 0))
+
+    img_path = FIXTURES_DIR / "_temp_scan_english.png"
+    img.save(str(img_path))
+
+    rect = fitz.Rect(0, 0, 400, 100)
+    page.insert_image(rect, filename=str(img_path))  # type: ignore[no-untyped-call]
+
+    path = FIXTURES_DIR / "scanned_english.pdf"
+    doc.save(str(path))
+    doc.close()
+    img_path.unlink()
+    print(f"  Created: {path.name}")
+
+
+def generate_mixed_native_scanned():
+    """Generate mixed_native_scanned.pdf — page 1 native text, page 2 scanned image."""
+    from PIL import Image as PILImage, ImageDraw
+
+    doc = fitz.open()
+
+    # Page 1: native text layer
+    page1 = doc.new_page()
+    page1.insert_text((72, 72), "Page 1: Native text layer", fontname="helv", fontsize=12)  # type: ignore[no-untyped-call]
+    page1.insert_text((72, 100), "This page has extractable text", fontname="helv", fontsize=12)  # type: ignore[no-untyped-call]
+
+    # Page 2: scanned (image only, no text layer)
+    img = PILImage.new("RGB", (400, 100), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    draw.text((10, 10), "Page 2: Scanned image only", fill=(0, 0, 0))
+    draw.text((10, 40), "No extractable text layer", fill=(0, 0, 0))
+
+    img_path = FIXTURES_DIR / "_temp_mixed.png"
+    img.save(str(img_path))
+
+    page2 = doc.new_page()
+    rect = fitz.Rect(0, 0, 400, 100)
+    page2.insert_image(rect, filename=str(img_path))  # type: ignore[no-untyped-call]
+
+    path = FIXTURES_DIR / "mixed_native_scanned.pdf"
+    doc.save(str(path))
+    doc.close()
+    img_path.unlink()
+    print(f"  Created: {path.name}")
+
+
 def main():
     print("Generating PDF test fixtures...")
     generate_native_chinese()
@@ -177,6 +273,9 @@ def main():
     generate_font_subset_chinese()
     generate_table_complex()
     generate_with_images()
+    generate_scanned_chinese()
+    generate_scanned_english()
+    generate_mixed_native_scanned()
     print("Done! All fixtures generated.")
 
 
