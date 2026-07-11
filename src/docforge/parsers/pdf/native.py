@@ -92,3 +92,52 @@ class NativePDFParser:
                     break
             refs.append(ref)
         return refs
+
+
+class TableExtractor:
+    """PDF table extractor using pdfplumber. v1 handles bordered tables only."""
+
+    def extract_tables(self, page, page_num: int) -> list[ContentBlock]:
+        """Extract tables from a page, returning TABLE type ContentBlocks."""
+        tables = page.extract_tables()
+        result: list[ContentBlock] = []
+        order_offset = 0
+        for table_data in tables:
+            if table_data:
+                md = self._to_markdown_table(table_data)
+                has_merged = self._detect_merged_cells(table_data)
+                result.append(
+                    ContentBlock(
+                        type=ContentType.TABLE,
+                        content=md,
+                        page=page_num,
+                        reading_order=order_offset,
+                        metadata={"has_merged_cells": has_merged},
+                    )
+                )
+                order_offset += 1
+        return result
+
+    def _to_markdown_table(self, table_data: list[list[str | None]]) -> str:
+        """Convert 2D array to Markdown table string."""
+        if not table_data:
+            return ""
+        # Clean: None → ""
+        cleaned = [[cell if cell is not None else "" for cell in row] for row in table_data]
+        lines: list[str] = []
+        # Header row
+        lines.append("| " + " | ".join(str(c) for c in cleaned[0]) + " |")
+        # Separator
+        lines.append("|" + "|".join(" --- " for _ in cleaned[0]) + "|")
+        # Data rows
+        for row in cleaned[1:]:
+            lines.append("| " + " | ".join(str(c) for c in row) + " |")
+        return "\n".join(lines)
+
+    def _detect_merged_cells(self, table_data: list[list[str | None]]) -> bool:
+        """Detect if table has merged cells (empty cells suggest colspan/rowspan)."""
+        for row in table_data:
+            for cell in row:
+                if cell is None or str(cell).strip() == "":
+                    return True
+        return False
