@@ -34,7 +34,10 @@ def parse(file_path: str | Path, **kwargs: object) -> ParseResult:
     if not path.exists():
         raise FileNotSupportedError(f"File not found: {path}")
 
-    file_type = detect_file_type(path)
+    try:
+        file_type = detect_file_type(path)
+    except ValueError as e:
+        raise FileNotSupportedError(str(e)) from e
     config_kwargs = {k: v for k, v in kwargs.items() if v is not None}
     config = ParseConfig(**config_kwargs) if config_kwargs else ParseConfig()
     parser = get_parser(file_type)

@@ -47,8 +47,8 @@ def list_supported_types() -> list[str]:
 
 
 # Import parser implementations to trigger registration
-import docforge.parsers.pdf  # noqa: E402, F401
-import docforge.parsers.docx_parser  # noqa: E402, F401
+import docforge.parsers.docx_parser  # noqa: E402
+import docforge.parsers.image_parser  # noqa: E402
+import docforge.parsers.pdf  # noqa: E402
+import docforge.parsers.pptx_parser  # noqa: E402
 import docforge.parsers.xlsx_parser  # noqa: E402, F401
-import docforge.parsers.pptx_parser  # noqa: E402, F401
-import docforge.parsers.image_parser  # noqa: E402, F401
