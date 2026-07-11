@@ -50,3 +50,4 @@ def list_supported_types() -> list[str]:
 import docforge.parsers.pdf  # noqa: E402, F401
 import docforge.parsers.docx_parser  # noqa: E402, F401
 import docforge.parsers.xlsx_parser  # noqa: E402, F401
+import docforge.parsers.pptx_parser  # noqa: E402, F401
