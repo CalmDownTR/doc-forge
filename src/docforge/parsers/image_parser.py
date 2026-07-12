@@ -27,7 +27,7 @@ class ImageParser(BaseParser):
 
     def parse(self, file_path: Path, config: ParseConfig) -> list[ContentBlock]:
         # 1. Open image with PIL
-        img = Image.open(str(file_path))
+        img: Image.Image = Image.open(str(file_path))
         # Convert to RGB if necessary
         if img.mode not in ("RGB", "L"):
             img = img.convert("RGB")

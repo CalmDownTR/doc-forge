@@ -57,7 +57,23 @@ docforge = "docforge.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/docforge"]
 
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = false
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "fitz",
+    "paddleocr",
+    "surya.*",
+]
+ignore_missing_imports = true
+
 [dependency-groups]
 dev = [
     "build>=1.5.1",
+    "lxml-stubs>=0.5.1",
+    "types-openpyxl>=3.1.5.20260518",
+    "types-tqdm>=4.68.0.20260608",
 ]

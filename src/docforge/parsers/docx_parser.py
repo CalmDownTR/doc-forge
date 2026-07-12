@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from docx import Document as DocxDocument
 from docx.oxml.ns import qn
@@ -73,7 +73,7 @@ class DOCXParser(BaseParser):
     def _process_body_children(
         self,
         parent: Element,
-        doc: DocxDocument,
+        doc: Any,  # DocxDocument — python-docx has no type stubs
         page: int,
         reading_order: int,
         config: ParseConfig,
@@ -214,7 +214,7 @@ class DOCXParser(BaseParser):
     def _process_paragraph(
         self,
         paragraph: Paragraph,
-        doc: DocxDocument,
+        doc: Any,  # DocxDocument — python-docx has no type stubs
         page: int,
         reading_order: int,
         config: ParseConfig,
@@ -267,7 +267,7 @@ class DOCXParser(BaseParser):
     def _extract_paragraph_image(
         self,
         paragraph: Paragraph,
-        doc: DocxDocument,
+        doc: Any,  # DocxDocument — python-docx has no type stubs
         reading_order: int,
         image_dir: Path,
         image_seq: int,
@@ -285,7 +285,7 @@ class DOCXParser(BaseParser):
 
                 # Get the image part
                 try:
-                    image_part = doc.part.related_parts[embed_id]
+                    image_part = doc.part.related_parts[embed_id]  # type: ignore[attr-defined]
                 except KeyError:
                     continue
 
@@ -325,16 +325,16 @@ class DOCXParser(BaseParser):
         return text.replace("|", "\\|")
 
 
-def _element_to_paragraph(element: Element, doc: DocxDocument) -> Paragraph:
+def _element_to_paragraph(element: Element, doc: Any) -> Paragraph:
     """Create a Paragraph object from an lxml element."""
     from docx.text.paragraph import Paragraph
-    return Paragraph(element, doc)  # type: ignore[no-any-return]
+    return Paragraph(element, doc)  # type: ignore[arg-type, no-any-return]
 
 
-def _element_to_table(element: Element, doc: DocxDocument) -> DocxTable | None:
+def _element_to_table(element: Element, doc: Any) -> DocxTable | None:
     """Create a Table object from an lxml element."""
     from docx.table import Table
-    return Table(element, doc)  # type: ignore[no-any-return]
+    return Table(element, doc)  # type: ignore[arg-type, no-any-return]
 
 
 register_parser("docx", DOCXParser)

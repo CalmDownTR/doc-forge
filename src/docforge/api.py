@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from docforge.config import ParseConfig
 from docforge.engine import ContentEngine
@@ -17,7 +18,7 @@ from docforge.parsers import get_parser
 from docforge.utils.file_utils import detect_file_type
 
 
-def parse(file_path: str | Path, **kwargs: object) -> ParseResult:
+def parse(file_path: str | Path, **kwargs: Any) -> ParseResult:
     """Parse a document file and return a ParseResult.
 
     Args:
