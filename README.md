@@ -18,9 +18,9 @@ Universal document parser for RAG applications. Chinese-first. One function call
 ### 安装
 
 ```bash
-pip install docforge                    # 核心功能
-pip install docforge[ocr-surya]        # 含 Surya OCR
-pip install docforge[all]              # 全部功能
+pip install docforge-parser                    # 核心功能
+pip install docforge-parser[ocr-surya]        # 含 Surya OCR
+pip install docforge-parser[all]              # 全部功能
 ```
 
 ### 快速开始
@@ -106,8 +106,8 @@ docforge parse ./docs/ --recursive -o ./output/
 ### 参与贡献
 
 ```bash
-git clone https://github.com/CalmDownTR/docforge.git
-cd docforge
+git clone https://github.com/CalmDownTR/doc-forge.git
+cd doc-forge
 uv sync --extra dev
 uv run pytest tests/
 uv run ruff check src/
@@ -126,9 +126,9 @@ MIT License
 ### Installation
 
 ```bash
-pip install docforge                    # Core only
-pip install docforge[ocr-surya]        # With Surya OCR
-pip install docforge[all]              # Everything
+pip install docforge-parser                    # Core only
+pip install docforge-parser[ocr-surya]        # With Surya OCR
+pip install docforge-parser[all]              # Everything
 ```
 
 ### Quickstart
@@ -214,8 +214,8 @@ docforge parse ./docs/ --recursive -o ./output/
 ### Contributing
 
 ```bash
-git clone https://github.com/CalmDownTR/docforge.git
-cd docforge
+git clone https://github.com/CalmDownTR/doc-forge.git
+cd doc-forge
 uv sync --extra dev
 uv run pytest tests/
 uv run ruff check src/
