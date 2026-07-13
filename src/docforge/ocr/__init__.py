@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import importlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -32,9 +34,23 @@ class OCRBackend(ABC):
 
 _BACKEND_REGISTRY: dict[str, type[OCRBackend]] = {}
 
+# Known backend module names, imported lazily by get_backend to trigger
+# registration. This avoids forcing numpy/surya/paddle at `import docforge`.
+_KNOWN_BACKENDS = ["surya", "paddle"]
+
 
 def register_backend(name: str, backend_cls: type[OCRBackend]) -> None:
     _BACKEND_REGISTRY[name] = backend_cls
+
+
+def _ensure_backend_registered(name: str) -> None:
+    """Dynamically import a backend module to trigger its register_backend call.
+
+    Safe to call repeatedly; ImportError (e.g. numpy missing) is swallowed so
+    the caller can fall through to the "not available" path.
+    """
+    with contextlib.suppress(ImportError):
+        importlib.import_module(f"docforge.ocr.{name}_backend")
 
 
 def get_backend(name: str = "auto") -> OCRBackend:
@@ -42,14 +58,17 @@ def get_backend(name: str = "auto") -> OCRBackend:
     from docforge.exceptions import OCRError
 
     if name == "auto":
-        for _backend_name, backend_cls in _BACKEND_REGISTRY.items():
-            backend = backend_cls()
+        for backend_name in _KNOWN_BACKENDS:
+            _ensure_backend_registered(backend_name)
+        for backend_name, cls in _BACKEND_REGISTRY.items():
+            backend = cls()
             if backend.is_available():
                 return backend
         raise OCRError(
             "No OCR backend available. "
             "Install docforge[ocr-surya] or docforge[ocr-paddle]."
         )
+    _ensure_backend_registered(name)
     cls = _BACKEND_REGISTRY.get(name)
     if cls is None:
         raise OCRError(f"Unknown OCR backend: {name}")

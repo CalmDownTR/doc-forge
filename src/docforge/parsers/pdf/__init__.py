@@ -4,18 +4,13 @@ from pathlib import Path
 
 import fitz
 
-# Trigger backend registration (module-level side effects)
-import docforge.ocr.paddle_backend
-import docforge.ocr.surya_backend  # noqa: F401
 from docforge.config import ParseConfig
 from docforge.exceptions import OCRError
 from docforge.models import ContentBlock, ContentType, ParseWarning
 from docforge.ocr import get_backend
-from docforge.ocr.preprocessor import Preprocessor
 from docforge.output.image_writer import ImageWriter
 from docforge.parsers import BaseParser, register_parser
 from docforge.parsers.pdf.native import NativePDFParser, TableExtractor
-from docforge.parsers.pdf.ocr import OCRPDFParser
 from docforge.parsers.pdf.quality import QualityChecker
 
 
@@ -77,6 +72,9 @@ class PDFParser(BaseParser):
         ocr_parser = None
         if config.ocr_fallback:
             try:
+                from docforge.ocr.preprocessor import Preprocessor
+                from docforge.parsers.pdf.ocr import OCRPDFParser
+
                 backend = get_backend("auto")
                 preprocessor = Preprocessor()
                 backend.initialize(list(config.ocr_languages))
@@ -111,6 +109,15 @@ class PDFParser(BaseParser):
                         table_extractor = TableExtractor()
                         table_blocks = table_extractor.extract_tables(plumber_page, page_num)
                         page_blocks.extend(table_blocks)
+            except ImportError:
+                self._parse_warnings.append(
+                    ParseWarning(
+                        code="pdf_tables_unavailable",
+                        message="pdfplumber not installed. PDF table extraction skipped. "
+                        "Install docforge[pdf-tables] to enable.",
+                        page=page_num,
+                    )
+                )
             except Exception:
                 pass
 

@@ -4,14 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 from PIL import Image
 
 from docforge.config import ParseConfig
 from docforge.exceptions import OCRError
 from docforge.models import ContentBlock, ContentType
 from docforge.ocr import get_backend
-from docforge.ocr.preprocessor import Preprocessor
 from docforge.parsers import BaseParser, register_parser
 
 
@@ -27,6 +25,10 @@ class ImageParser(BaseParser):
 
     def parse(self, file_path: Path, config: ParseConfig) -> list[ContentBlock]:
         # 1. Open image with PIL
+        import numpy as np
+
+        from docforge.ocr.preprocessor import Preprocessor
+
         img: Image.Image = Image.open(str(file_path))
         # Convert to RGB if necessary
         if img.mode not in ("RGB", "L"):

@@ -26,12 +26,12 @@ classifiers = [
 ]
 dependencies = [
     "PyMuPDF>=1.24.0",
-    "pdfplumber>=0.11.0",
     "python-docx>=1.1.0",
     "openpyxl>=3.1.0",
     "Pillow>=10.0.0",
+    # numpy is a hard transitive dep of Pillow (PIL._typing imports numpy.typing
+    # at module top level), so it cannot be made optional. Pinned for the OCR path.
     "numpy>=2.3.5",
-    "requests>=2.34.2",
 ]
 
 [project.urls]
@@ -48,7 +48,8 @@ image-preprocess = ["opencv-python>=4.8.0"]
 pptx = [
     "python-pptx>=0.6.23",
 ]
-all = ["docforge[ocr-paddle,ocr-surya,image-preprocess,pptx]"]
+pdf-tables = ["pdfplumber>=0.11.0"]
+all = ["docforge[ocr-paddle,ocr-surya,image-preprocess,pptx,pdf-tables]"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff", "mypy"]
 
 [project.scripts]
@@ -65,6 +66,9 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = [
     "fitz",
+    "cv2",
+    "pptx",
+    "pptx.table",
     "paddleocr",
     "surya.*",
 ]
