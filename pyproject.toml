@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "docforge"
+name = "docforge-parser"
 version = "1.0.0"
 description = "Universal document parser for RAG applications. Chinese-first."
 license = { text = "MIT" }
