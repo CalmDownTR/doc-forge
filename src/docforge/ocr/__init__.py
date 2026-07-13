@@ -60,8 +60,8 @@ def get_backend(name: str = "auto") -> OCRBackend:
     if name == "auto":
         for backend_name in _KNOWN_BACKENDS:
             _ensure_backend_registered(backend_name)
-        for backend_name, cls in _BACKEND_REGISTRY.items():
-            backend = cls()
+        for _backend_name, backend_cls in _BACKEND_REGISTRY.items():
+            backend = backend_cls()
             if backend.is_available():
                 return backend
         raise OCRError(
